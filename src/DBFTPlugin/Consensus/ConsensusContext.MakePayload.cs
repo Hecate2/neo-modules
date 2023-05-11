@@ -129,7 +129,7 @@ namespace Neo.Consensus
                 Timestamp = Block[pId].Timestamp,
                 Nonce = Block[pId].Nonce,
                 TransactionHashes = TransactionHashes[pId],
-                TransactionBodies = Block[pId].Transactions
+                TransactionBodies = Block[pId].Transactions ?? TransactionHashes[pId].Select(p => Transactions[pId][p]).ToArray()
             });
         }
 
@@ -157,7 +157,7 @@ namespace Neo.Consensus
                     BlockIndex = Block[pId].Index,
                     ValidatorIndex = Block[pId].PrimaryIndex,
                     TransactionHashes = TransactionHashes[pId],
-                    TransactionBodies = Block[pId].Transactions
+                    TransactionBodies = Block[pId].Transactions ?? TransactionHashes[pId].Select(p => Transactions[pId][p]).ToArray()
                 };
             }
             return MakeSignedPayload(new RecoveryMessage

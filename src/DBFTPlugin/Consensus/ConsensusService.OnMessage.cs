@@ -129,10 +129,10 @@ namespace Neo.Consensus
                 return;
             }
 
-            foreach (Transaction tx_ in message.TransactionBodies)
-                // SOMETHING LIKE neoSystem.MemPool.TryAdd(tx_, neoSystem.StoreView);
-                if (!neoSystem.ContainsTransaction(tx_.Hash))
-                    neoSystem.Blockchain.Tell(tx_);
+            blockchain.Ask<Blockchain.FillCompleted>(new Blockchain.FillMemoryPool
+            {
+                Transactions = message.TransactionBodies
+            }).Wait();
             Dictionary<UInt256, Transaction> mempoolVerified = neoSystem.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
             //Cash previous asked TX Hashes

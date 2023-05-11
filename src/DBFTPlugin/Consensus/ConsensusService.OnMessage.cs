@@ -85,6 +85,7 @@ namespace Neo.Consensus
             if (message.ValidatorIndex != context.Block[pId].PrimaryIndex || message.ViewNumber != context.ViewNumber) return;
             if (message.Version != context.Block[pId].Version || message.PrevHash != context.Block[pId].PrevHash) return;
             if (message.TransactionHashes.Length > neoSystem.Settings.MaxTransactionsPerBlock) return;
+            if (message.TransactionBodies.Length > message.TransactionHashes.Length) return;
 
             Log($"{nameof(OnPrepareRequestReceived)}: height={message.BlockIndex} view={message.ViewNumber} index={message.ValidatorIndex} tx={message.TransactionHashes.Length} priority={message.ValidatorIndex == context.Block[0].PrimaryIndex} fallback={context.ViewNumber == 0 && message.ValidatorIndex == context.Block[1].PrimaryIndex}");
             if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMilliseconds(8 * neoSystem.Settings.MillisecondsPerBlock).ToTimestampMS())
@@ -128,6 +129,10 @@ namespace Neo.Consensus
                 return;
             }
 
+            foreach (Transaction tx_ in message.TransactionBodies)
+                // SOMETHING LIKE neoSystem.MemPool.TryAdd(tx_, neoSystem.StoreView);
+                if (!neoSystem.ContainsTransaction(tx_.Hash))
+                    neoSystem.Blockchain.Tell(tx_);
             Dictionary<UInt256, Transaction> mempoolVerified = neoSystem.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
             //Cash previous asked TX Hashes

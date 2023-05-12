@@ -9,6 +9,7 @@
 // modifications are permitted.
 
 using Neo.IO;
+using Neo.Network.P2P.Payloads;
 using System;
 using System.IO;
 using System.Linq;
@@ -22,13 +23,15 @@ namespace Neo.Consensus
         public ulong Timestamp;
         public ulong Nonce;
         public UInt256[] TransactionHashes;
+        public Transaction[] TransactionBodies;
 
         public override int Size => base.Size
             + sizeof(uint)                      //Version
             + UInt256.Length                    //PrevHash
             + sizeof(ulong)                     //Timestamp
             + sizeof(ulong)                     // Nonce
-            + TransactionHashes.GetVarSize();   //TransactionHashes
+            + TransactionHashes.GetVarSize()    //TransactionHashes
+            + TransactionBodies.GetVarSize();   //TransactionBodies
 
         public PrepareRequest() : base(ConsensusMessageType.PrepareRequest) { }
 
@@ -42,6 +45,7 @@ namespace Neo.Consensus
             TransactionHashes = reader.ReadSerializableArray<UInt256>(ushort.MaxValue);
             if (TransactionHashes.Distinct().Count() != TransactionHashes.Length)
                 throw new FormatException();
+            TransactionBodies = reader.ReadSerializableArray<Transaction>(ushort.MaxValue);
         }
 
         public override bool Verify(ProtocolSettings protocolSettings)
@@ -58,6 +62,7 @@ namespace Neo.Consensus
             writer.Write(Timestamp);
             writer.Write(Nonce);
             writer.Write(TransactionHashes);
+            writer.Write(TransactionBodies);
         }
     }
 }

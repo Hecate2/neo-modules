@@ -81,6 +81,7 @@ namespace Neo.Consensus
             if (message.Version != context.Block.Version || message.PrevHash != context.Block.PrevHash) return;
             if (message.TransactionHashes.Length > neoSystem.Settings.MaxTransactionsPerBlock) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={message.BlockIndex} view={message.ViewNumber} index={message.ValidatorIndex} tx={message.TransactionHashes.Length}");
+            if (message.TransactionBodies.Length > message.TransactionHashes.Length) return;
             if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMilliseconds(8 * neoSystem.Settings.MillisecondsPerBlock).ToTimestampMS())
             {
                 Log($"Timestamp incorrect: {message.Timestamp}", LogLevel.Warning);
@@ -121,6 +122,10 @@ namespace Neo.Consensus
                 return;
             }
 
+            blockchain.Ask<Blockchain.FillCompleted>(new Blockchain.FillMemoryPool
+            {
+                Transactions = message.TransactionBodies
+            }).Wait();
             Dictionary<UInt256, Transaction> mempoolVerified = neoSystem.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
             foreach (UInt256 hash in context.TransactionHashes)

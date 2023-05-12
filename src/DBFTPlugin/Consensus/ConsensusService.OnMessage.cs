@@ -122,10 +122,7 @@ namespace Neo.Consensus
                 return;
             }
 
-            blockchain.Ask<Blockchain.FillCompleted>(new Blockchain.FillMemoryPool
-            {
-                Transactions = message.TransactionBodies
-            }).Wait();
+            Dictionary<UInt256, Transaction> txInBlock = message.TransactionBodies.ToDictionary(p => p.Hash);
             Dictionary<UInt256, Transaction> mempoolVerified = neoSystem.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
             foreach (UInt256 hash in context.TransactionHashes)
@@ -137,7 +134,7 @@ namespace Neo.Consensus
                 }
                 else
                 {
-                    if (neoSystem.MemPool.TryGetValue(hash, out tx))
+                    if (txInBlock.TryGetValue(hash, out tx) || neoSystem.MemPool.TryGetValue(hash, out tx))
                         unverified.Add(tx);
                 }
             }
